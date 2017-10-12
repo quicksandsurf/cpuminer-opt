@@ -297,10 +297,18 @@ bool std_work_decode( const json_t *val, struct work *work )
        applog(LOG_ERR, "JSON invalid target");
        return false;
     }
-    for ( i = 0; i < adata_sz; i++ )
-          work->data[i] = le32dec( work->data + i );
-    for ( i = 0; i < atarget_sz; i++ )
-          work->target[i] = le32dec( work->target + i );
+    if (opt_algo == ALGO_M7M)
+    {
+       for ( i = 0; i < 32; i++ )
+          be32enc( work->data + i, work->data[i] );
+    }
+    else
+    {
+       for ( i = 0; i < adata_sz; i++ )
+           work->data[i] = le32dec( work->data + i );
+       for ( i = 0; i < atarget_sz; i++ )
+           work->target[i] = le32dec( work->target + i );
+    }
     return true;
 }
 
@@ -859,9 +867,18 @@ bool std_submit_getwork_result( CURL *curl, struct work *work )
    char* gw_str;
    int data_size = algo_gate.work_data_size;
 
-   for ( int i = 0; i < data_size / sizeof(uint32_t); i++ )
-     le32enc( &work->data[i], work->data[i] );
-   gw_str = abin2hex( (uchar*)work->data, data_size );
+   if (opt_algo == ALGO_M7M)
+   {
+      for ( int i = 0; i < 32; i++ )
+         be32enc( work->data + i, work->data[i] );
+      gw_str = abin2hex( (uchar*)work->data, 128 );
+   }
+   else
+   {
+      for ( int i = 0; i < data_size / sizeof(uint32_t); i++ )
+         le32enc( &work->data[i], work->data[i] );
+      gw_str = abin2hex( (uchar*)work->data, data_size );
+   }
    if ( unlikely(!gw_str) )
    {
       applog(LOG_ERR, "submit_upstream_work OOM");
