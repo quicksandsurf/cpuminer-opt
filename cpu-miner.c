@@ -324,8 +324,6 @@ bool std_be_work_decode( const json_t *val, struct work *work )
     }
     for ( i = 0; i < adata_sz; i++ )
           work->data[i] = be32dec( work->data + i );
-    for ( i = 0; i < atarget_sz; i++ )
-          work->target[i] = be32dec( work->target + i );
     return true;
 }
 
